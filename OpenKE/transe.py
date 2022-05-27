@@ -58,7 +58,7 @@ hyperparameters = {
 
 logging.basicConfig(format='%(asctime)s [%(levelname)s] %(message)s', level=logging.INFO)
 
-today = datetime.date.today()
+today = datetime.today()
 
 
 # misc ======================================================================
