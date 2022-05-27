@@ -1,14 +1,16 @@
 import contextlib as cl
 import ctypes
 import io
-import tempfile
 import json
 import logging
 import os
 import sys
+import tempfile
 from datetime import datetime
 from itertools import product
 from typing import Mapping, Iterable, Any
+
+import numpy as np
 
 from openke.config import Trainer, Tester
 from openke.data import TrainDataLoader, TestDataLoader
@@ -87,12 +89,10 @@ def generate_grid(hyperparameter: Mapping[str, Iterable[Any]]) -> Iterable[Mappi
         yield grid_item
 
 
-
 # The following code was taken from Eli Bendersky's website
 #   https://eli.thegreenplace.net/2015/redirecting-all-kinds-of-stdout-in-python/#id8
 @cl.contextmanager
 def redirect(source, destination):
-
     def _get_sys(source):
         if source == "stdout":
             return sys.stdout
@@ -139,6 +139,12 @@ def redirect(source, destination):
         tfile.close()
         os.close(saved_fd)
 
+
+def save_as_txt(path, embs):
+    with open(path, "w") as fp:
+        for emb in list(embs):
+            line = "\t".join(str(w) for w in list(emb))
+            fp.write(f"{line}\t\n")
 
 
 # entry point ===============================================================
@@ -206,6 +212,7 @@ for run_num, hp in enumerate(grid):
         tester.run_link_prediction(type_constrain=False)
         test_tac = datetime.now()
         run_tac = datetime.now()
+    # save a few important things
     with open(os.path.join(run_dir, "hyperparameters.json"), "w") as fp:
         json.dump(hp, fp, indent=4)
     elapsed_time = {
@@ -215,3 +222,10 @@ for run_num, hp in enumerate(grid):
     }
     with open(os.path.join(run_dir, "time.json"), "w") as fp:
         json.dump(elapsed_time, fp, indent=4)
+    # save embeddings
+    ent_embeddings = transe.ent_embeddings.weight.detach().cpu().numpy()
+    rel_embeddings = transe.rel_embeddings.weight.detach().cpu().numpy()
+    np.save(os.path.join(run_dir, f"entity2vec{hp['dim']}.npy"), ent_embeddings)
+    np.save(os.path.join(run_dir, f"relation2vec{hp['dim']}.npy"), rel_embeddings)
+    save_as_txt(os.path.join(run_dir, f"relation2vec{hp['dim']}.init"), rel_embeddings)
+    save_as_txt(os.path.join(run_dir, f"entity2vec{hp['dim']}.init"), ent_embeddings)
