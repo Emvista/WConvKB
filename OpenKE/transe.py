@@ -146,11 +146,11 @@ for run_num, hp in enumerate(grid):
         test_tac = datetime.now()
         run_tac = datetime.now()
     with open(os.path.join(run_dir, "hyperparameters.json"), "w") as fp:
-        json.dump(hp, fp, ident=4)
+        json.dump(hp, fp, indent=4)
     elapsed_time = {
         "train_time": train_tac - train_tic,
         "test_time": test_tac - test_tic,
         "total_time": run_tac - run_tic
     }
     with open(os.path.join(run_dir, "time.json"), "w") as fp:
-        json.dump(elapsed_time, fp, ident=4)
+        json.dump(elapsed_time, fp, indent=4)
