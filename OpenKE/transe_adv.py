@@ -28,8 +28,8 @@ hyperparameters = {
     "sampling_mode": ["cross"],
     "bern_flag": [0],
     "filter_flag": [1],
-    "neg_ent": 64,
-    "neg_rel": 0,
+    "neg_ent": [64],
+    "neg_rel": [0],
     # Model
     "dim": [1024],
     "p_norm": [1],
@@ -172,10 +172,10 @@ for run_num, hp in enumerate(grid):
     trainer = Trainer(
         model=model,
         data_loader=train_dataloader,
-        train_times=3000,
-        alpha=2e-5,
-        opt_method="adam",
-        use_gpu=True,
+        train_times=hp["train_times"],
+        alpha=hp["alpha"],
+        opt_method=hp["opt_method"],
+        use_gpu=False,
     )
     with open(os.path.join(run_dir, "train.out"), "w") as out, \
             open(os.path.join(run_dir, "train.err"), "w") as err, \
@@ -192,7 +192,7 @@ for run_num, hp in enumerate(grid):
             redirect("stdout", out), \
             redirect("stderr", err):
         test_tic = datetime.now()
-        tester = Tester(model=transe, data_loader=test_dataloader, use_gpu=True)
+        tester = Tester(model=transe, data_loader=test_dataloader, use_gpu=False)
         tester.run_link_prediction(type_constrain=False)
         test_tac = datetime.now()
         run_tac = datetime.now()
