@@ -12,7 +12,7 @@ from typing import Mapping, Iterable, Any
 
 import numpy as np
 
-from module.loss import SigmoidLoss
+from openke.module.loss import SigmoidLoss
 from openke.config import Trainer, Tester
 from openke.data import TrainDataLoader, TestDataLoader
 from openke.module.model import TransE
