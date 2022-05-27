@@ -123,7 +123,7 @@ for run_num, hp in enumerate(grid):
         data_loader=train_dataloader,
         train_times=hp["train_times"],
         alpha=hp["alpha"],
-        use_gpu=False
+        use_gpu=True
     )
     with open(os.path.join(run_dir, "train.out"), "w") as out, \
             open(os.path.join(run_dir, "train.err"), "w") as err, \
