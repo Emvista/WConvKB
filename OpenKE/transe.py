@@ -86,33 +86,45 @@ def generate_grid(hyperparameter: Mapping[str, Iterable[Any]]) -> Iterable[Mappi
             grid_item[key] = hp[idx]
         yield grid_item
 
+
+
 # The following code was taken from Eli Bendersky's website
 #   https://eli.thegreenplace.net/2015/redirecting-all-kinds-of-stdout-in-python/#id8
 @cl.contextmanager
 def redirect(source, destination):
-    # The original fd stdout points to. Usually 1 on POSIX systems.
-    original_source_fd = source.fileno()
 
-    def _redirect_src(source, to_fd):
+    if source == "stdout":
+        _source = sys.stdout
+        c_source = c_stdout
+    elif source == "stderr":
+        _source = sys.stderr
+        c_source = c_stderr
+    else:
+        raise ValueError(f"Can't handle source {source}, must be 'stdout' or 'stderr'")
+
+    # The original fd stdout points to. Usually 1 on POSIX systems.
+    original_source_fd = sys.stdout.fileno()
+
+    def _redirect_to_fd(_source, to_fd):
         """Redirect stdout to the given file descriptor."""
         # Flush the C-level buffer stdout
-        libc.fflush(c_stdout)
+        libc.fflush(c_source)
         # Flush and close sys.stdout - also closes the file descriptor (fd)
-        source.close()
-        # Make original_stdout_fd point to the same file as to_fd
+        _source.close()
+        # Make original_source_fd point to the same file as to_fd
         os.dup2(to_fd, original_source_fd)
         # Create a new sys.stdout that points to the redirected fd
-        source = io.TextIOWrapper(os.fdopen(original_source_fd, 'wb'))
+        _source = io.TextIOWrapper(os.fdopen(original_source_fd, 'wb'))
 
     # Save a copy of the original stdout fd in saved_stdout_fd
     saved_stdout_fd = os.dup(original_source_fd)
     try:
         # Create a temporary file and redirect stdout to it
         tfile = tempfile.TemporaryFile(mode='w+b')
-        _redirect_src(source, tfile.fileno())
+        _redirect_to_fd(_source, tfile.fileno())
         # Yield to caller, then redirect stdout back to the saved fd
         yield
-        _redirect_src(source, saved_stdout_fd)
+        _redirect_to_fd(_source, saved_stdout_fd)
         # Copy contents of temporary file to the given stream
         tfile.flush()
         tfile.seek(0, io.SEEK_SET)
@@ -120,6 +132,7 @@ def redirect(source, destination):
     finally:
         tfile.close()
         os.close(saved_stdout_fd)
+
 
 
 # entry point ===============================================================
@@ -166,7 +179,7 @@ for run_num, hp in enumerate(grid):
         data_loader=train_dataloader,
         train_times=hp["train_times"],
         alpha=hp["alpha"],
-        use_gpu=True
+        use_gpu=False
     )
     with open(os.path.join(run_dir, "train.out"), "w") as out, \
             open(os.path.join(run_dir, "train.err"), "w") as err, \
