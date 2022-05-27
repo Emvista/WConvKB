@@ -183,8 +183,8 @@ for run_num, hp in enumerate(grid):
     )
     with open(os.path.join(run_dir, "train.out"), "w") as out, \
             open(os.path.join(run_dir, "train.err"), "w") as err, \
-            cl.redirect_stdout(out), \
-            cl.redirect_stderr(err):
+            redirect("stdout", out), \
+            redirect("stderr", err):
         train_tic = datetime.now()
         trainer.run()
         train_tac = datetime.now()
@@ -193,8 +193,8 @@ for run_num, hp in enumerate(grid):
     # test the model
     with open(os.path.join(run_dir, "test.out"), "w") as out, \
             open(os.path.join(run_dir, "test.err"), "w") as err, \
-            cl.redirect_stdout(out), \
-            cl.redirect_stderr(err):
+            redirect("stdout", out), \
+            redirect("stderr", err):
         test_tic = datetime.now()
         tester = Tester(model=transe, data_loader=test_dataloader, use_gpu=True)
         tester.run_link_prediction(type_constrain=False)
