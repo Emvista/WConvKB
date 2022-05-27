@@ -103,7 +103,7 @@ def redirect(source, destination):
         raise ValueError(f"Can't handle source {source}, must be 'stdout' or 'stderr'")
 
     # The original fd stdout points to. Usually 1 on POSIX systems.
-    original_source_fd = sys.stdout.fileno()
+    original_source_fd = _source.fileno()
 
     def _redirect_to_fd(_source, to_fd):
         """Redirect stdout to the given file descriptor."""
@@ -116,22 +116,22 @@ def redirect(source, destination):
         # Create a new sys.stdout that points to the redirected fd
         _source = io.TextIOWrapper(os.fdopen(original_source_fd, 'wb'))
 
-    # Save a copy of the original stdout fd in saved_stdout_fd
-    saved_stdout_fd = os.dup(original_source_fd)
+    # Save a copy of the original stdout fd in saved_fd
+    saved_fd = os.dup(original_source_fd)
     try:
         # Create a temporary file and redirect stdout to it
         tfile = tempfile.TemporaryFile(mode='w+b')
         _redirect_to_fd(_source, tfile.fileno())
         # Yield to caller, then redirect stdout back to the saved fd
         yield
-        _redirect_to_fd(_source, saved_stdout_fd)
+        _redirect_to_fd(_source, saved_fd)
         # Copy contents of temporary file to the given stream
         tfile.flush()
         tfile.seek(0, io.SEEK_SET)
         destination.write(tfile.read())
     finally:
         tfile.close()
-        os.close(saved_stdout_fd)
+        os.close(saved_fd)
 
 
 
