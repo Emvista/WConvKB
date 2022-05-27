@@ -24,21 +24,21 @@ dataset_dir = "../data/RezoJDM16K/"
 
 hyperparameters = {
     # TrainDataLoader
-    "batch_size": [100_000],
+    "batch_size": [10_000, 100_000],
     "sampling_mode": ["normal"],
     "bern_flag": [1],
     "filter_flag": [1],
     "neg_ent": [35],
     "neg_rel": [0],
     # Model
-    "dim": [50],
+    "dim": [50, 100],
     "p_norm": [1],
     "norm_flag": [True],
     # NegativeSampling
-    "margin": [1.0],
+    "margin": [3.0, 5.0],
     # Trainer
-    "train_times": [1],
-    "alpha": [1e-4, 5e-5],
+    "train_times": [3_000],
+    "alpha": [5e-4, 5e-3],
     "opt_method": ["sgd"]
 }
 

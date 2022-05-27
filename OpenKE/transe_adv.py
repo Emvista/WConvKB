@@ -24,23 +24,23 @@ dataset_dir = "../data/RezoJDM16K/"
 
 hyperparameters = {
     # TrainDataLoader
-    "batch_size": [2000],
+    "batch_size": [10_000, 100_000],
     "sampling_mode": ["cross"],
     "bern_flag": [0],
     "filter_flag": [1],
-    "neg_ent": [64],
+    "neg_ent": [0, 64],
     "neg_rel": [0],
     # Model
-    "dim": [1024],
+    "dim": [50, 100],
     "p_norm": [1],
     "norm_flag": [True],
-    "transe_margin": [6.0],
+    "transe_margin": [3.0, 5.0],
     # NegativeSampling
     "adv_temperature": [1],
     "regul_rate": [0.0],
     # Trainer
-    "train_times": [3000],
-    "alpha": [2e-5],
+    "train_times": [3_000],
+    "alpha": [2e-5, 5e-3],
     "opt_method": ["adam"]
 }
 
@@ -160,7 +160,7 @@ for run_num, hp in enumerate(grid):
         dim=hp["dim"],
         p_norm=hp["p_norm"],
         norm_flag=hp["norm_flag"],
-        margin=6.0)
+        margin=hp["transe_margin"])
     # define the loss function
     model = NegativeSampling(
         model=transe,
@@ -175,7 +175,7 @@ for run_num, hp in enumerate(grid):
         train_times=hp["train_times"],
         alpha=hp["alpha"],
         opt_method=hp["opt_method"],
-        use_gpu=False,
+        use_gpu=True,
     )
     with open(os.path.join(run_dir, "train.out"), "w") as out, \
             open(os.path.join(run_dir, "train.err"), "w") as err, \
@@ -185,14 +185,14 @@ for run_num, hp in enumerate(grid):
         trainer.run()
         train_tac = datetime.now()
     # save final state
-    transe.save_checkpoint(os.path.join(run_dir, "transe_final.ckpt"))
+    transe.save_checkpoint(os.path.join(run_dir, "transeadv_final.ckpt"))
     # test the model
     with open(os.path.join(run_dir, "test.out"), "w") as out, \
             open(os.path.join(run_dir, "test.err"), "w") as err, \
             redirect("stdout", out), \
             redirect("stderr", err):
         test_tic = datetime.now()
-        tester = Tester(model=transe, data_loader=test_dataloader, use_gpu=False)
+        tester = Tester(model=transe, data_loader=test_dataloader, use_gpu=True)
         tester.run_link_prediction(type_constrain=False)
         test_tac = datetime.now()
         run_tac = datetime.now()
