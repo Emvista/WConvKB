@@ -1,7 +1,11 @@
 import contextlib as cl
+import ctypes
+import io
+import tempfile
 import json
 import logging
 import os
+import sys
 from datetime import datetime
 from itertools import product
 from typing import Mapping, Iterable, Any
@@ -60,6 +64,10 @@ logging.basicConfig(format='%(asctime)s [%(levelname)s] %(message)s', level=logg
 
 today = datetime.today()
 
+libc = ctypes.CDLL(None)
+c_stdout = ctypes.c_void_p.in_dll(libc, 'stdout')
+c_stderr = ctypes.c_void_p.in_dll(libc, 'stderr')
+
 
 # misc ======================================================================
 
@@ -77,6 +85,41 @@ def generate_grid(hyperparameter: Mapping[str, Iterable[Any]]) -> Iterable[Mappi
         for idx, key in enumerate(sorted_keys):
             grid_item[key] = hp[idx]
         yield grid_item
+
+# The following code was taken from Eli Bendersky's website
+#   https://eli.thegreenplace.net/2015/redirecting-all-kinds-of-stdout-in-python/#id8
+@cl.contextmanager
+def redirect(source, destination):
+    # The original fd stdout points to. Usually 1 on POSIX systems.
+    original_source_fd = source.fileno()
+
+    def _redirect_src(source, to_fd):
+        """Redirect stdout to the given file descriptor."""
+        # Flush the C-level buffer stdout
+        libc.fflush(c_stdout)
+        # Flush and close sys.stdout - also closes the file descriptor (fd)
+        source.close()
+        # Make original_stdout_fd point to the same file as to_fd
+        os.dup2(to_fd, original_source_fd)
+        # Create a new sys.stdout that points to the redirected fd
+        source = io.TextIOWrapper(os.fdopen(original_source_fd, 'wb'))
+
+    # Save a copy of the original stdout fd in saved_stdout_fd
+    saved_stdout_fd = os.dup(original_source_fd)
+    try:
+        # Create a temporary file and redirect stdout to it
+        tfile = tempfile.TemporaryFile(mode='w+b')
+        _redirect_src(source, tfile.fileno())
+        # Yield to caller, then redirect stdout back to the saved fd
+        yield
+        _redirect_src(source, saved_stdout_fd)
+        # Copy contents of temporary file to the given stream
+        tfile.flush()
+        tfile.seek(0, io.SEEK_SET)
+        destination.write(tfile.read())
+    finally:
+        tfile.close()
+        os.close(saved_stdout_fd)
 
 
 # entry point ===============================================================
@@ -142,15 +185,14 @@ for run_num, hp in enumerate(grid):
         test_tic = datetime.now()
         tester = Tester(model=transe, data_loader=test_dataloader, use_gpu=True)
         tester.run_link_prediction(type_constrain=False)
-        tester.run_triple_classification()
         test_tac = datetime.now()
         run_tac = datetime.now()
     with open(os.path.join(run_dir, "hyperparameters.json"), "w") as fp:
         json.dump(hp, fp, indent=4)
     elapsed_time = {
-        "train_time": train_tac - train_tic,
-        "test_time": test_tac - test_tic,
-        "total_time": run_tac - run_tic
+        "train_time": str(train_tac - train_tic),
+        "test_time": str(test_tac - test_tic),
+        "total_time": str(run_tac - run_tic)
     }
     with open(os.path.join(run_dir, "time.json"), "w") as fp:
         json.dump(elapsed_time, fp, indent=4)
