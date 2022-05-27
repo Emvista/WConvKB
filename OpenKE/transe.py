@@ -1,8 +1,11 @@
-import datetime
+import contextlib as cl
+import json
 import logging
 import os
-import contextlib as cl
-from hptuner import generate_grid
+from datetime import datetime
+from itertools import product
+from typing import Mapping, Iterable, Any
+
 from openke.config import Trainer, Tester
 from openke.data import TrainDataLoader, TestDataLoader
 from openke.module.loss import MarginLoss
@@ -57,20 +60,34 @@ logging.basicConfig(format='%(asctime)s [%(levelname)s] %(message)s', level=logg
 
 today = datetime.date.today()
 
+
+# misc ======================================================================
+
+def generate_grid(hyperparameter: Mapping[str, Iterable[Any]]) -> Iterable[Mapping[str, Iterable[Any]]]:
+    """Generates an iterator over the cartesian product of hyperparameters values.
+
+    :param hyperparameter: a mapping from hyperparameter name to possible values
+    :return: an iterator over the cartesian product of hyperparameters values
+    """
+    # sort is used to make sure order is always the same
+    sorted_keys = sorted(hyperparameter.keys())
+    hpp = product(*[hyperparameter[k] for k in sorted_keys])
+    for hp in hpp:
+        grid_item = dict()
+        for idx, key in enumerate(sorted_keys):
+            grid_item[key] = hp[idx]
+        yield grid_item
+
+
 # entry point ===============================================================
-
-# Make sure a few things are in place ---------------------------------------
-
-# Do the job ----------------------------------------------------------------
 
 grid = list(generate_grid(hyperparameters))
 
 # dataloader for test
 test_dataloader = TestDataLoader(dataset_dir, "link")
 
-run_ptrn = "TransE_{date}_{hps}"
-
 for run_num, hp in enumerate(grid):
+    run_tic = datetime.now()
     # preparation
     run_id = f"TransE_{today.year}{today.month}{today.day}_{run_num}"
     run_dir = os.path.join(dataset_dir, "TransE", run_id)
@@ -112,8 +129,23 @@ for run_num, hp in enumerate(grid):
             open(os.path.join(run_dir, "train.err"), "w") as err, \
             cl.redirect_stdout(out), \
             cl.redirect_stderr(err):
+        train_tic = datetime.now()
         trainer.run()
+        train_tac = datetime.now()
         transe.save_checkpoint(os.path.join(run_dir, "transe_final.ckpt"))
         # test the model
+        test_tic = datetime.now()
         tester = Tester(model=transe, data_loader=test_dataloader, use_gpu=True)
         tester.run_link_prediction(type_constrain=False)
+        tester.run_triple_classification()
+        test_tac = datetime.now()
+    run_tac = datetime.now()
+    with open(os.path.join(run_dir, "hyperparameters.json"), "w") as fp:
+        json.dump(hp, fp, ident=4)
+    elapsed_time = {
+        "train_time": train_tac - train_tic,
+        "test_time": test_tac - test_tic,
+        "total_time": run_tac - run_tic
+    }
+    with open(os.path.join(run_dir, "time.json"), "w") as fp:
+        json.dump(elapsed_time, fp, ident=4)
