@@ -134,7 +134,7 @@ def redirect(source, destination):
         # Copy contents of temporary file to the given stream
         tfile.flush()
         tfile.seek(0, io.SEEK_SET)
-        destination.write(tfile.read())
+        destination.write(str(tfile.read()))
     finally:
         tfile.close()
         os.close(saved_fd)
