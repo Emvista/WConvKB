@@ -38,7 +38,7 @@ dataset_dir = "../data/RezoJDM16K/"
 
 hyperparameters = {
     # TrainDataLoader
-    "batch_size": [10_000],
+    "batch_size": [100_000],
     "sampling_mode": ["normal"],
     "bern_flag": [1],
     "filter_flag": [1],
@@ -52,7 +52,7 @@ hyperparameters = {
     "margin": [1.0],
     # Trainer
     "train_times": [1],
-    "alpha": [1e-4],
+    "alpha": [1e-4, 5e-5],
     "opt_method": ["sgd"]
 }
 
@@ -132,14 +132,19 @@ for run_num, hp in enumerate(grid):
         train_tic = datetime.now()
         trainer.run()
         train_tac = datetime.now()
-        transe.save_checkpoint(os.path.join(run_dir, "transe_final.ckpt"))
-        # test the model
+    # save final state
+    transe.save_checkpoint(os.path.join(run_dir, "transe_final.ckpt"))
+    # test the model
+    with open(os.path.join(run_dir, "test.out"), "w") as out, \
+            open(os.path.join(run_dir, "test.err"), "w") as err, \
+            cl.redirect_stdout(out), \
+            cl.redirect_stderr(err):
         test_tic = datetime.now()
         tester = Tester(model=transe, data_loader=test_dataloader, use_gpu=True)
         tester.run_link_prediction(type_constrain=False)
         tester.run_triple_classification()
         test_tac = datetime.now()
-    run_tac = datetime.now()
+        run_tac = datetime.now()
     with open(os.path.join(run_dir, "hyperparameters.json"), "w") as fp:
         json.dump(hp, fp, ident=4)
     elapsed_time = {
