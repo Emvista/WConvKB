@@ -457,10 +457,10 @@ class Config(object):
                 res += loss
             training_range.set_description("Epoch %d | loss: %f" % (epoch, res))
             # print("Epoch %d | loss: %f" % (epoch, res))
-            if (epoch + 1) % self.save_steps == 0:
+            if self.save_steps > 0 and (epoch + 1) % self.save_steps == 0:
                 training_range.set_description("Epoch %d has finished, saving..." % (epoch))
                 self.save_checkpoint(self.trainModel.state_dict(), epoch)
-            if (epoch + 1) % self.valid_steps == 0:
+            if self.valid_steps > 0 and (epoch + 1) % self.valid_steps == 0:
                 training_range.set_description("Epoch %d has finished | loss: %f, validating..." % (epoch, res))
                 hit10 = self.valid(self.trainModel)
                 if hit10 > best_hit10:
