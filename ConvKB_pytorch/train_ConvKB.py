@@ -94,11 +94,15 @@ def get_init_embeddings(relinit, entinit):
 if args.mode == "train":
 
     if args.use_init:
-        hidden_size = "100"  # for FB15K-237
-        con.set_dimension(100)
         if args.dataset == "WN18RR":
             hidden_size = "50"
             con.set_dimension(50)
+        elif args.dataset == "FB15K-237":
+            hidden_size = "100"
+            con.set_dimension(100)
+        else:
+            hidden_size = str(args.hidden_size)
+            con.set_dimension(args.hidden_size)
 
         init_entity_embs, init_relation_embs = get_init_embeddings(
             "./benchmarks/" + args.dataset + "/relation2vec"+hidden_size+".init",
