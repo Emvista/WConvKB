@@ -3,13 +3,13 @@
 This repository introduces WConvKB, a Wide Convolutional neural network for Knowledge Graph completion.
 
 Our ongoing research is an extension to ConvKB architecture with two major differences:
-(i) we have added non-linear fully connected layers motivated by VGG architectures, and
-(ii) we have utilized multiple wide convolutions modules inspired by Inception-based computer vision models.
+1. we have added non-linear fully connected layers motivated by VGG architectures, and
+2. we have utilized multiple wide convolutions modules inspired by Inception-based computer vision models.
 
 ## Description
 
-The `src` directory contains the code of the model, based directly on ConvKB implementation.
-In `data` the RezoJDM16k dataset can be found.
+The `src` directory contains the code of the model, based directly on ConvKB implementation. \
+In `data` the RezoJDM16k dataset can be found. \
 Finally `notebooks` provides an easy way to produce the initializing embeddings using OpenKE.
 
 ## Results
