@@ -8,8 +8,8 @@ Our ongoing research is an extension to ConvKB architecture with two major diffe
 
 ## Description
 
-The `src` directory contains the code of the model, based directly on ConvKB implementation. \
-In `data` the RezoJDM16k dataset can be found. \
+The `src` directory contains the code of the model, based directly on ConvKB implementation. 
+The RezoJDM16k dataset can be found in `src/benchmarks/RezoJDM16k`.
 Finally `notebooks` provides an easy way to produce the initializing embeddings using OpenKE.
 
 ## Results
